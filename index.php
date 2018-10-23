@@ -20,11 +20,150 @@ $app->post('/profileUserPK','profileUserPK');
 $app->post('/editstatusPK','editstatusPK');
 $app->post('/profileDetailPK','profileDetailPK');
 $app->post('/editbiodataPK','editbiodataPK');
-
+$app->post('/editkontakPK','editkontakPK');
+$app->post('/editintroPK','editintroPK');
+$app->post('/signupperusahaan','signupperusahaan');
+$app->post('/aftersignupPerusahaan','aftersignupPerusahaan');
+$app->post('/profilePerusahaan','profilePerusahaan');
+$app->post('/profileDetailPKHire','profileDetailPKHire');
+$app->post('/profileUserPKHire','profileUserPKHire');
 
 $app->run();
 
-/************************* EDIT STATUS PK *************************************/
+/************************* AFTER SIGN UP PERUSAHAAN *************************************/
+function aftersignupPerusahaan(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $namaPerusahaan=$data->namaPerusahaan;
+    $bidangPerusahaan=$data->bidangPerusahaan;
+    $alamatPerusahaan=$data->alamatPerusahaan;
+    $kodeposPerusahaan=$data->kodeposPerusahaan;
+    $notelpPerusahaan=$data->notelpPerusahaan;
+    $emailPerusahaan=$data->emailPerusahaan;
+    $deskripsiPerusahaan=$data->deskripsiPerusahaan;
+    $systemToken=apiToken($user_id);
+    
+    try {
+         
+        if($systemToken == $token){
+         
+            
+            $profileData = '';
+            $db = getDB();
+            $sql = "insert into profile_perusahaan(userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,email) values (:user_id,:namaPerusahaan,:bidangPerusahaan,:alamatPerusahaan,:kodeposPerusahaan,:notelpPerusahaan,:deskripsiPerusahaan,:emailPerusahaan)";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->bindParam("namaPerusahaan", $namaPerusahaan, PDO::PARAM_STR);
+            $stmt->bindParam("bidangPerusahaan",$bidangPerusahaan,PDO::PARAM_STR);
+            $stmt->bindParam("alamatPerusahaan", $alamatPerusahaan, PDO::PARAM_STR);
+            $stmt->bindParam("kodeposPerusahaan", $kodeposPerusahaan, PDO::PARAM_INT);
+            $stmt->bindParam("notelpPerusahaan",$notelpPerusahaan,PDO::PARAM_INT);
+            $stmt->bindParam("emailPerusahaan", $emailPerusahaan, PDO::PARAM_STR);
+            $stmt->bindParam("deskripsiPerusahaan", $deskripsiPerusahaan, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $sql1 = "SELECT userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,profile_perusahaan.email FROM profile_perusahaan,user WHERE userID_fk=:user_id and userID_fk=user_id";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt1->execute();
+            $profileData = $stmt1->fetch(PDO::FETCH_OBJ);
+
+
+            $db = null;
+            echo '{"profileData": ' . json_encode($profileData) . '}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+/************************* EDIT INTRO PK *************************************/
+function editintroPK(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $ttg_saya=$data->ttg_saya;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $db = getDB();
+            $sql = "UPDATE profile_pencari_kerja set ttg_saya=:ttg_saya where user_id_fk=:user_id";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->bindParam("ttg_saya", $ttg_saya, PDO::PARAM_STR);
+            $stmt->execute();
+
+            $sql1 = "SELECT nama_lengkap,ttg_saya from profile_pencari_kerja where user_id_fk=:user_id";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt1->execute();
+            $statusData = $stmt1->fetch(PDO::FETCH_OBJ);
+
+            $db = null;
+            echo '{"profileData": ' . json_encode($statusData) . '}';
+
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+
+/************************* EDIT KONTAK PK *************************************/
+function editkontakPK(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $alamat=$data->alamat;
+    $kodepos=$data->kodepos;
+    $no_telp=$data->no_telp;
+    $email=$data->email;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $db = getDB();
+            $sql = "UPDATE profile_pencari_kerja,user set alamat=:alamat, kodepos=:kodepos, no_telp=:no_telp,email=:email where user_id_fk=:user_id and user_id=:user_id";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->bindParam("alamat", $alamat, PDO::PARAM_STR);
+            $stmt->bindParam("kodepos", $kodepos, PDO::PARAM_STR);
+            $stmt->bindParam("no_telp",$no_telp,PDO::PARAM_STR);
+            $stmt->bindParam("email",$email,PDO::PARAM_STR);
+            $stmt->execute();
+
+            $sql1 = "SELECT * from profile_pencari_kerja where user_id_fk=:user_id";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt1->execute();
+            $statusData = $stmt1->fetch(PDO::FETCH_OBJ);
+
+            $db = null;
+            echo '{"profileData": ' . json_encode($statusData) . '}';
+
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+/************************* EDIT BIODATA PK *************************************/
 function editbiodataPK(){
     $request = \Slim\Slim::getInstance()->request();
     $data = json_decode($request->getBody());
@@ -109,6 +248,7 @@ function editstatusPK(){
     }
 }
 
+/************************* AFTER SIGN UP PK *************************************/
 function aftersignupPK(){
     $request = \Slim\Slim::getInstance()->request();
     $data = json_decode($request->getBody());
@@ -168,7 +308,7 @@ function login() {
         
         $db = getDB();
         $userData ='';
-        $sql = "SELECT user_id, name, email, username FROM user WHERE (username=:username or email=:username) and password=:password ";
+        $sql = "SELECT user_id, name, email, username,level FROM user WHERE (username=:username or email=:username) and password=:password ";
         $stmt = $db->prepare($sql);
         $stmt->bindParam("username", $data->username, PDO::PARAM_STR);
         $password=hash('sha256',$data->password);
@@ -230,6 +370,71 @@ function signuppencarikerja(){
                 -
                 /*Inserting user values*/
                 $sql1="INSERT INTO user(username,password,email,name,level)VALUES(:username,:password,:email,:name,2)";
+                $stmt1 = $db->prepare($sql1);
+                $stmt1->bindParam("username", $username,PDO::PARAM_STR);
+                $password=hash('sha256',$data->password);
+                $stmt1->bindParam("password", $password,PDO::PARAM_STR);
+                $stmt1->bindParam("email", $email,PDO::PARAM_STR);
+                $stmt1->bindParam("name", $name,PDO::PARAM_STR);
+                $stmt1->execute();
+                
+                $userData=internalUserDetails($email);
+                
+            }
+            
+            $db = null;
+         
+
+            if($userData){
+               $userData = json_encode($userData);
+                echo '{"userData": ' .$userData . '}';
+            } else {
+               echo '{"error":{"text":"Enter valid data"}}';
+            }
+
+           
+        }
+        else{
+            echo '{"error":{"text":"Enter valid data"}}';
+        }
+    }
+    catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+
+/* ### User registration ### */
+function signupperusahaan(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $email=$data->email;
+    $name=$data->name;
+    $username=$data->username;
+    $password=$data->password;
+    
+    try {
+        
+        $username_check = preg_match('~^[A-Za-z0-9_]{3,20}$~i', $username);
+        $email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $email);
+        $password_check = preg_match('~^[A-Za-z0-9!@#$%^&*()_]{6,20}$~i', $password);
+        if (strlen(trim($username))>0 && strlen(trim($password))>0 && strlen(trim($email))>0 && $email_check>0 && $username_check>0 && $password_check>0)
+        {
+        
+            $db = getDB();
+            $userData = '';
+            $sql = "SELECT user_id FROM user WHERE username=:username or email=:email";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("username", $username,PDO::PARAM_STR);
+            $stmt->bindParam("email", $email,PDO::PARAM_STR);
+            $stmt->execute();
+            $mainCount=$stmt->rowCount();
+            $created=time();
+            if($mainCount==0)
+            {
+                -
+                /*Inserting user values*/
+                $sql1="INSERT INTO user(username,password,email,name,level)VALUES(:username,:password,:email,:name,3)";
                 $stmt1 = $db->prepare($sql1);
                 $stmt1->bindParam("username", $username,PDO::PARAM_STR);
                 $password=hash('sha256',$data->password);
@@ -468,13 +673,13 @@ function feedPK(){
             $feedData = '';
             $db = getDB();
             if($lastCreated){
-                $sql = "SELECT nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY id_prodi DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY id_prodi DESC LIMIT 15";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
                 $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
             }
             else{
-                $sql = "SELECT nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY id_prodi DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY id_prodi DESC LIMIT 15";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             }
@@ -506,20 +711,54 @@ function profileUserPK(){
     try {
          
         if($systemToken == $token){
-            $feedData = '';
+            $profileUserData = '';
             $db = getDB();
                 $sql = "SELECT * from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and profile_pencari_kerja.user_id_fk=:user_id inner join user on profile_pencari_kerja.user_id_fk=user.user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
-            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $profileUserData = $stmt->fetchAll(PDO::FETCH_OBJ);
            
             $db = null;
 
-            if($feedData)
-            echo '{"feedData": ' . json_encode($feedData) . '}';
+            if($profileUserData)
+            echo '{"profileUserData": ' . json_encode($profileUserData) . '}';
             else
-            echo '{"feedData": ""}';
+            echo '{"profileUserData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function profileUserPKHire(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $user_id_fk=$data->user_id_fk;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $profileUserData = '';
+            $db = getDB();
+                $sql = "SELECT * from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and profile_pencari_kerja.user_id_fk=:user_id_fk inner join user on profile_pencari_kerja.user_id_fk=user.user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt->execute();
+            $profileUserData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($profileUserData)
+            echo '{"profileUserData": ' . json_encode($profileUserData) . '}';
+            else
+            echo '{"profileUserData": ""}';
         } else{
             echo '{"error":{"text":"No access"}}';
         }
@@ -539,20 +778,88 @@ function profileDetailPK(){
     try {
          
         if($systemToken == $token){
-            $feedData = '';
+            $profileUserDetailData = '';
             $db = getDB();
-                $sql = "SELECT*from detail_kerja where user_id_fk=:user_id;";
+                $sql = "SELECT*from detail_kerja where user_id_fk=:user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
-            $feedData2 = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $profileUserDetailData = $stmt->fetchAll(PDO::FETCH_OBJ);
            
             $db = null;
 
-            if($feedData2)
-            echo '{"feedData2": ' . json_encode($feedData2) . '}';
+            if($profileUserDetailData)
+            echo '{"profileUserDetailData": ' . json_encode($profileUserDetailData) . '}';
             else
-            echo '{"feedData2": ""}';
+            echo '{"profileUserDetailData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function profileDetailPKHire(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $user_id_fk=$data->user_id_fk;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $profileUserDetailData = '';
+            $db = getDB();
+                $sql = "SELECT*from detail_kerja where user_id_fk=:user_id_fk";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt->execute();
+            $profileUserDetailData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($profileUserDetailData)
+            echo '{"profileUserDetailData": ' . json_encode($profileUserDetailData) . '}';
+            else
+            echo '{"profileUserDetailData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+
+function profilePerusahaan(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $feedData = '';
+            $db = getDB();
+                $sql = "SELECT * from profile_perusahaan inner join user on profile_perusahaan.userID_fk=user.user_id and profile_perusahaan.userID_fk=:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($feedData)
+            echo '{"feedData": ' . json_encode($feedData) . '}';
+            else
+            echo '{"feedData": ""}';
         } else{
             echo '{"error":{"text":"No access"}}';
         }
