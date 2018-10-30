@@ -27,8 +27,82 @@ $app->post('/aftersignupPerusahaan','aftersignupPerusahaan');
 $app->post('/profilePerusahaan','profilePerusahaan');
 $app->post('/profileDetailPKHire','profileDetailPKHire');
 $app->post('/profileUserPKHire','profileUserPKHire');
+$app->post('/notifikasi','notifikasi');
+$app->post('/tampilnotifikasi','tampilnotifikasi');
 
 $app->run();
+
+/************************* TAMPIL NOTIFIKASI *************************************/
+function tampilnotifikasi(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $profileUserData = '';
+            $db = getDB();
+                $sql = "SELECT countbadgenotif from notification,user where user_id_fk=:user_id and user_id_fk=user_id ";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $profileUserData= $row['countbadgenotif'];
+           
+            $db = null;
+
+            if($profileUserData)
+            echo json_encode($profileUserData);
+            else
+            echo '{"profileUserData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+/************************* NOTIFIKASI *************************************/
+function notifikasi(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $user_id_fk=$data->user_id_fk;
+    $count_badge_notif=$data->count_badge_notif;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $notifData = '';
+            $db = getDB();
+            $sql = "UPDATE notification set countbadgenotif=:count_badge_notif where user_id_fk=:user_id_fk";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt->bindParam("count_badge_notif", $count_badge_notif, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $sql1 = "SELECT user_id_fk,countbadgenotif from notification,user where user_id_fk=:user_id_fk and user_id_fk=user_id";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt1->execute();
+            $notifData = $stmt1->fetch(PDO::FETCH_OBJ);
+
+
+            $db = null;
+            echo '{"notifData": ' . json_encode($notifData) . '}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
 
 /************************* AFTER SIGN UP PERUSAHAAN *************************************/
 function aftersignupPerusahaan(){
@@ -278,6 +352,11 @@ function aftersignupPK(){
             $stmt2 = $db->prepare($sql2);
             $stmt2->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt2->execute();
+
+            $sql3 = "insert into notification(user_id_fk,countbadgenotif) values (:user_id,0);";
+            $stmt3 = $db->prepare($sql3);
+            $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt3->execute();
 
             $sql1 = "SELECT nama_lengkap,prodi,tahun_lulus FROM profile_pencari_kerja,program_studi WHERE user_id_fk=:user_id and id_prodi_fk=id_prodi";
             $stmt1 = $db->prepare($sql1);
