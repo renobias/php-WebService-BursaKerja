@@ -29,8 +29,69 @@ $app->post('/profileDetailPKHire','profileDetailPKHire');
 $app->post('/profileUserPKHire','profileUserPKHire');
 $app->post('/notifikasi','notifikasi');
 $app->post('/tampilnotifikasi','tampilnotifikasi');
+$app->post('/ambilnilainotifikasi','ambilnilainotifikasi');
+$app->post('/emptynotifikasi','emptynotifikasi');
+$app->post('/pesannotifikasiPK','pesannotifikasiPK');
 
 $app->run();
+
+/************************* TAMPIL PESAN NOTIFIKASI *************************************/
+function pesannotifikasiPK(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $profileUserData = '';
+            $db = getDB();
+                $sql = "SELECT id_pencarikerja_fk,nama_lengkap,id_perusahaan_fk,nama_perusahaan,created from interest inner join profile_pencari_kerja on interest.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on interest.id_perusahaan_fk=profile_perusahaan.userID_fk and id_pencarikerja_fk=:user_id order by created desc";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $profileUserData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($profileUserData)
+            echo '{"profileUserData": ' . json_encode($profileUserData) . '}';
+            else
+            echo '{"profileUserData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+/************************* AMBIL NILAI NOTIFIKASI *************************************/
+function ambilnilainotifikasi(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+   
+    try {
+            $profileUserData = '';
+            $db = getDB();
+                $sql = "SELECT countbadgenotif from notification,user where user_id_fk=:user_id and user_id_fk=user_id ";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $profileUserData= $row['countbadgenotif'];
+           
+            $db = null;
+            echo json_encode($profileUserData);
+
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
 
 /************************* TAMPIL NOTIFIKASI *************************************/
 function tampilnotifikasi(){
@@ -56,7 +117,7 @@ function tampilnotifikasi(){
             if($profileUserData)
             echo json_encode($profileUserData);
             else
-            echo '{"profileUserData": ""}';
+            echo 'null';
         } else{
             echo '{"error":{"text":"No access"}}';
         }
@@ -86,9 +147,52 @@ function notifikasi(){
             $stmt->bindParam("count_badge_notif", $count_badge_notif, PDO::PARAM_INT);
             $stmt->execute();
 
+            $sql2 = "insert into interest(id_perusahaan_fk,id_pencarikerja_fk,created) values(:user_id,:user_id_fk,:created)";
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt2->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $created = time();
+            $stmt2->bindParam("created", $created, PDO::PARAM_INT);
+            $stmt2->execute();
+
             $sql1 = "SELECT user_id_fk,countbadgenotif from notification,user where user_id_fk=:user_id_fk and user_id_fk=user_id";
             $stmt1 = $db->prepare($sql1);
             $stmt1->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt1->execute();
+            $notifData = $stmt1->fetch(PDO::FETCH_OBJ);
+            $db = null;
+            echo '{"notifData": ' . json_encode($notifData) . '}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+/************************* EMPTY *************************************/
+function emptynotifikasi(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $count_badge_notif=$data->count_badge_notif;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $notifData = '';
+            $db = getDB();
+            $sql = "UPDATE notification set countbadgenotif=:count_badge_notif where user_id_fk=:user_id";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->bindParam("count_badge_notif", $count_badge_notif, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $sql1 = "SELECT user_id_fk,countbadgenotif from notification,user where user_id_fk=:user_id and user_id_fk=user_id";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt1->execute();
             $notifData = $stmt1->fetch(PDO::FETCH_OBJ);
 
@@ -752,13 +856,13 @@ function feedPK(){
             $feedData = '';
             $db = getDB();
             if($lastCreated){
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY id_prodi DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY user_id_fk DESC LIMIT 15";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
                 $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
             }
             else{
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY id_prodi DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC LIMIT 15";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             }

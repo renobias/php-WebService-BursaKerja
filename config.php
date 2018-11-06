@@ -8,9 +8,19 @@ define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', 'mekarsari');
 define('DB_DATABASE', 'bursakerjaftunj');
-define("BASE_URL", "http://localhost/PHP-Slim-Restful/api/");
+define("BASE_URL", "http://localhost/WebService-BursaKerja-final/api/");
 define("SITE_KEY", 'yourSecretKey');
 
+
+/* DATABASE CONFIGURATION */
+/*
+define('DB_SERVER', 'localhost');
+define('DB_USERNAME', 'id7735509_root');
+define('DB_PASSWORD', 'mekarsari');
+define('DB_DATABASE', 'id7735509_bursakerjaftunj');
+define("BASE_URL", "https://bursakerjaftunj.000webhostapp.com/public_html/api/");
+define("SITE_KEY", 'yourSecretKey');
+*/
 
 function getDB() 
 {

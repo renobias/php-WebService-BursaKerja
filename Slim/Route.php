@@ -40,6 +40,7 @@ namespace Slim;
  */
 class Route
 {
+    
     /**
      * @var string The route pattern (e.g. "/books/:id")
      */
