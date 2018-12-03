@@ -224,35 +224,37 @@ function aftersignupPerusahaan(){
     $systemToken=apiToken($user_id);
     
     try {
-         
-        if($systemToken == $token){
-         
-            
-            $profileData = '';
-            $db = getDB();
-            $sql = "insert into profile_perusahaan(userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,email) values (:user_id,:namaPerusahaan,:bidangPerusahaan,:alamatPerusahaan,:kodeposPerusahaan,:notelpPerusahaan,:deskripsiPerusahaan,:emailPerusahaan)";
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $stmt->bindParam("namaPerusahaan", $namaPerusahaan, PDO::PARAM_STR);
-            $stmt->bindParam("bidangPerusahaan",$bidangPerusahaan,PDO::PARAM_STR);
-            $stmt->bindParam("alamatPerusahaan", $alamatPerusahaan, PDO::PARAM_STR);
-            $stmt->bindParam("kodeposPerusahaan", $kodeposPerusahaan, PDO::PARAM_INT);
-            $stmt->bindParam("notelpPerusahaan",$notelpPerusahaan,PDO::PARAM_INT);
-            $stmt->bindParam("emailPerusahaan", $emailPerusahaan, PDO::PARAM_STR);
-            $stmt->bindParam("deskripsiPerusahaan", $deskripsiPerusahaan, PDO::PARAM_STR);
-            $stmt->execute();
+        $email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $emailPerusahaan);
+            if($systemToken == $token){
+                if (strlen(trim($emailPerusahaan))>0 && $email_check>0){
+                $profileData = '';
+                $db = getDB();
+                $sql = "insert into profile_perusahaan(userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,email) values (:user_id,:namaPerusahaan,:bidangPerusahaan,:alamatPerusahaan,:kodeposPerusahaan,:notelpPerusahaan,:deskripsiPerusahaan,:emailPerusahaan)";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("namaPerusahaan", $namaPerusahaan, PDO::PARAM_STR);
+                $stmt->bindParam("bidangPerusahaan",$bidangPerusahaan,PDO::PARAM_STR);
+                $stmt->bindParam("alamatPerusahaan", $alamatPerusahaan, PDO::PARAM_STR);
+                $stmt->bindParam("kodeposPerusahaan", $kodeposPerusahaan, PDO::PARAM_INT);
+                $stmt->bindParam("notelpPerusahaan",$notelpPerusahaan,PDO::PARAM_INT);
+                $stmt->bindParam("emailPerusahaan", $emailPerusahaan, PDO::PARAM_STR);
+                $stmt->bindParam("deskripsiPerusahaan", $deskripsiPerusahaan, PDO::PARAM_STR);
+                $stmt->execute();
 
-            $sql1 = "SELECT userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,profile_perusahaan.email FROM profile_perusahaan,user WHERE userID_fk=:user_id and userID_fk=user_id";
-            $stmt1 = $db->prepare($sql1);
-            $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
-            $stmt1->execute();
-            $profileData = $stmt1->fetch(PDO::FETCH_OBJ);
+                $sql1 = "SELECT userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,profile_perusahaan.email FROM profile_perusahaan,user WHERE userID_fk=:user_id and userID_fk=user_id";
+                $stmt1 = $db->prepare($sql1);
+                $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt1->execute();
+                $profileData = $stmt1->fetch(PDO::FETCH_OBJ);
 
 
-            $db = null;
-            echo '{"profileData": ' . json_encode($profileData) . '}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
+                $db = null;
+                echo '{"profileData": ' . json_encode($profileData) . '}';
+            }else{
+                echo '{"error":{"text":"Enter valid data"}}';
+            }
+     } else{
+        echo '{"error":{"text":"No access"}}';
         }
        
     } catch(PDOException $e) {
@@ -267,16 +269,18 @@ function editintroPK(){
     $user_id=$data->user_id;
     $token=$data->token;
     $ttg_saya=$data->ttg_saya;
+    $avatar=$data->avatar;
     $systemToken=apiToken($user_id);
    
     try {
          
         if($systemToken == $token){
             $db = getDB();
-            $sql = "UPDATE profile_pencari_kerja set ttg_saya=:ttg_saya where user_id_fk=:user_id";
+            $sql = "UPDATE profile_pencari_kerja set ttg_saya=:ttg_saya,foto_profil=:foto_profil where user_id_fk=:user_id";
             $stmt = $db->prepare($sql);
             $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->bindParam("ttg_saya", $ttg_saya, PDO::PARAM_STR);
+            $stmt->bindParam("foto_profil", $avatar, PDO::PARAM_STR);
             $stmt->execute();
 
             $sql1 = "SELECT nama_lengkap,ttg_saya from profile_pencari_kerja where user_id_fk=:user_id";
