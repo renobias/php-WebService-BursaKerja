@@ -32,8 +32,160 @@ $app->post('/tampilnotifikasi','tampilnotifikasi');
 $app->post('/ambilnilainotifikasi','ambilnilainotifikasi');
 $app->post('/emptynotifikasi','emptynotifikasi');
 $app->post('/pesannotifikasiPK','pesannotifikasiPK');
+$app->post('/daftarPenawaran','daftarPenawaran');
+$app->post('/berhentiPenawaran','berhentiPenawaran');
+$app->post('/getBidangPekerjaan','getBidangPekerjaan');
+$app->post('/getBidangKeahlian','getBidangKeahlian');
+$app->post('/getProgramStudi','getProgramStudi');
 
 $app->run();
+
+function getProgramStudi(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+
+    if($systemToken == $token){
+        $ProgramStudiData = '';
+        $db = getDB();
+
+            $sql = "SELECT * from program_studi";
+            $stmt = $db->prepare($sql);
+
+        $stmt->execute();
+        $ProgramStudiData = $stmt->fetchAll(PDO::FETCH_OBJ);
+       
+        $db = null;
+
+        if($ProgramStudiData)
+        echo '{"ProgramStudiData": ' . json_encode($ProgramStudiData) . '}';
+        else
+        echo '{"ProgramStudiData": ""}';
+    } else{
+        echo '{"error":{"text":"No access"}}';
+    }
+}
+
+function getBidangKeahlian(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $id_bidang_pekerjaan=$data->id_bidang_pekerjaan;
+    $systemToken=apiToken($user_id);
+  
+    if($systemToken == $token){
+        $BidangKeahlianData = '';
+        $db = getDB();
+
+            $sql = "SELECT*from bidang_keahlian inner join bidang_pekerjaan on bidang_pekerjaan.id_bidang_pekerjaan=bidang_keahlian.id_bidang_pekerjaan_fk and bidang_keahlian.id_bidang_pekerjaan_fk=:id_bidang_pekerjaan";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam("id_bidang_pekerjaan", $id_bidang_pekerjaan, PDO::PARAM_INT);
+
+        $stmt->execute();
+        $BidangKeahlianData = $stmt->fetchAll(PDO::FETCH_OBJ);
+       
+        $db = null;
+
+        if($BidangKeahlianData)
+        echo '{"BidangKeahlianData": ' . json_encode($BidangKeahlianData) . '}';
+        else
+        echo '{"BidangKeahlianData": ""}';
+    } else{
+        echo '{"error":{"text":"No access"}}';
+    }
+}
+
+function getBidangPekerjaan(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+
+    if($systemToken == $token){
+        $BidangPekerjaanDataData = '';
+        $db = getDB();
+
+            $sql = "SELECT * from bidang_pekerjaan";
+            $stmt = $db->prepare($sql);
+
+        $stmt->execute();
+        $BidangPekerjaanData = $stmt->fetchAll(PDO::FETCH_OBJ);
+       
+        $db = null;
+
+        if($BidangPekerjaanData)
+        echo '{"BidangPekerjaanData": ' . json_encode($BidangPekerjaanData) . '}';
+        else
+        echo '{"BidangPekerjaanData": ""}';
+    } else{
+        echo '{"error":{"text":"No access"}}';
+    }
+}
+
+/************************* BERHENTI PENAWARAN *************************************/
+function berhentiPenawaran(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $id_penawaran = $data->id_penawaran;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "DELETE from daftar_penawaran where id_penawaran=:id_penawaran";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("id_penawaran", $id_penawaran, PDO::PARAM_INT);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"pencari kerja deleted"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    } 
+}
+
+/************************* DAFTAR PENAWARAN *************************************/
+function daftarPenawaran(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $profileUserData = '';
+            $db = getDB();
+                $sql = "SELECT id_penawaran,id_perusahaan_fk,nama_perusahaan,id_pencarikerja_fk,nama_lengkap from daftar_penawaran inner join profile_pencari_kerja on daftar_penawaran.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on daftar_penawaran.id_perusahaan_fk=profile_perusahaan.userID_fk  and id_perusahaan_fk=:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $profileUserData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($profileUserData)
+            echo '{"profileUserData": ' . json_encode($profileUserData) . '}';
+            else
+            echo '{"profileUserData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
 
 /************************* TAMPIL PESAN NOTIFIKASI *************************************/
 function pesannotifikasiPK(){
@@ -154,6 +306,17 @@ function notifikasi(){
             $created = time();
             $stmt2->bindParam("created", $created, PDO::PARAM_INT);
             $stmt2->execute();
+
+            $sql3 = "insert into daftar_penawaran(id_perusahaan_fk,id_pencarikerja_fk) values(:user_id,:user_id_fk)";
+            $stmt3 = $db->prepare($sql3);
+            $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt3->execute();
+
+            $sql4 = "UPDATE detail_kerja set status_kerja = 3 where user_id_fk=:user_id_fk";
+            $stmt4 = $db->prepare($sql4);
+            $stmt4->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt4->execute();
 
             $sql1 = "SELECT user_id_fk,countbadgenotif from notification,user where user_id_fk=:user_id_fk and user_id_fk=user_id";
             $stmt1 = $db->prepare($sql1);
@@ -456,7 +619,7 @@ function aftersignupPK(){
             $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
             $stmt->execute();
             
-            $sql2 = "INSERT INTO detail_kerja(user_id_fk) values (:user_id);";
+            $sql2 = "INSERT INTO detail_kerja(user_id_fk,status_kerja,status_pencarian_kerja) values (:user_id,2,2);";
             $stmt2 = $db->prepare($sql2);
             $stmt2->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt2->execute();
@@ -517,14 +680,12 @@ function login() {
             } else {
                echo '{"error":{"text":"Bad request wrong username and password"}}';
             }
-
            
     }
     catch(PDOException $e) {
         echo '{"error":{"text":'. $e->getMessage() .'}}';
     }
 }
-
 
 /* ### User registration ### */
 function signuppencarikerja(){
