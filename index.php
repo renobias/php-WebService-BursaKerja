@@ -37,8 +37,211 @@ $app->post('/berhentiPenawaran','berhentiPenawaran');
 $app->post('/getBidangPekerjaan','getBidangPekerjaan');
 $app->post('/getBidangKeahlian','getBidangKeahlian');
 $app->post('/getProgramStudi','getProgramStudi');
+$app->post('/simpanBidangKeahlianSatu','simpanBidangKeahlianSatu');
+$app->post('/simpanBidangKeahlianDua','simpanBidangKeahlianDua');
+$app->post('/simpanBidangKeahlianTiga','simpanBidangKeahlianTiga');
+$app->post('/getKeahlianUtama','getKeahlianUtama');
+$app->post('/getKeahlianKedua','getKeahlianKedua');
+$app->post('/getKeahlianKetiga','getKeahlianKetiga');
+$app->post('/getKeahlianUtamaAll','getKeahlianUtamaAll');
 
 $app->run();
+
+function getKeahlianUtamaAll(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+   
+    try {
+         
+            $keahlianUtamaData = '';
+            $db = getDB();
+                $sql = "SELECT user_id_fk,id_bidang_pekerjaan_fk_1,bidang_pekerjaan,id_bidang_keahlian_fk_1,bidang_keahlian from detail_kerja inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1= bidang_pekerjaan.id_bidang_pekerjaan inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $keahlianUtamaData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($keahlianUtamaData)
+            echo '{"keahlianUtamaData": ' . json_encode($keahlianUtamaData) . '}';
+            else
+            echo '{"keahlianUtamaData": ""}';
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function getKeahlianUtama(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+   
+    try {
+         
+            $keahlianUtamaData = '';
+            $db = getDB();
+                $sql = "SELECT user_id_fk,id_bidang_pekerjaan_fk_1,bidang_pekerjaan,id_bidang_keahlian_fk_1,bidang_keahlian from detail_kerja inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1= bidang_pekerjaan.id_bidang_pekerjaan inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $keahlianUtamaData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($keahlianUtamaData)
+            echo '{"keahlianUtamaData": ' . json_encode($keahlianUtamaData) . '}';
+            else
+            echo '{"keahlianUtamaData": ""}';
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function getKeahlianKedua(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+   
+    try {
+         
+            $keahlianKeduaData = '';
+            $db = getDB();
+                $sql = "SELECT user_id_fk,id_bidang_pekerjaan_fk_2,bidang_pekerjaan,id_bidang_keahlian_fk_2,bidang_keahlian from detail_kerja inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_2= bidang_pekerjaan.id_bidang_pekerjaan inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_2=bidang_keahlian.id_bidang_keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $keahlianKeduaData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($keahlianKeduaData)
+            echo '{"keahlianKeduaData": ' . json_encode($keahlianKeduaData) . '}';
+            else
+            echo '{"keahlianKeduaData": ""}';
+ 
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function getKeahlianKetiga(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+
+   
+    try {
+            $keahlianKetigaData = '';
+            $db = getDB();
+                $sql = "SELECT user_id_fk,id_bidang_pekerjaan_fk_3,bidang_pekerjaan,id_bidang_keahlian_fk_3,bidang_keahlian from detail_kerja inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_3= bidang_pekerjaan.id_bidang_pekerjaan inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_3=bidang_keahlian.id_bidang_keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $keahlianKetigaData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            if($keahlianKetigaData)
+            echo '{"keahlianKetigaData": ' . json_encode($keahlianKetigaData) . '}';
+            else
+            echo '{"keahlianKetigaData": ""}';
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function simpanBidangKeahlianSatu(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $id_Bidang_Pekerjaan = $data->idBidangPekerjaan;
+    $id_Bidang_Keahlian = $data->idBidangKeahlian;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "UPDATE detail_kerja set id_bidang_pekerjaan_fk_1 =:id_Bidang_Pekerjaan, id_bidang_keahlian_fk_1=:id_Bidang_Keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Pekerjaan", $id_Bidang_Pekerjaan, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Keahlian", $id_Bidang_Keahlian, PDO::PARAM_INT);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"keahlian updated"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function simpanBidangKeahlianDua(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $id_Bidang_Pekerjaan = $data->idBidangPekerjaan;
+    $id_Bidang_Keahlian = $data->idBidangKeahlian;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "UPDATE detail_kerja set id_bidang_pekerjaan_fk_2 =:id_Bidang_Pekerjaan, id_bidang_keahlian_fk_2=:id_Bidang_Keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Pekerjaan", $id_Bidang_Pekerjaan, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Keahlian", $id_Bidang_Keahlian, PDO::PARAM_INT);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"keahlian updated"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function simpanBidangKeahlianTiga(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $id_Bidang_Pekerjaan = $data->idBidangPekerjaan;
+    $id_Bidang_Keahlian = $data->idBidangKeahlian;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "UPDATE detail_kerja set id_bidang_pekerjaan_fk_3 =:id_Bidang_Pekerjaan, id_bidang_keahlian_fk_3=:id_Bidang_Keahlian where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Pekerjaan", $id_Bidang_Pekerjaan, PDO::PARAM_INT);
+                $stmt->bindParam("id_Bidang_Keahlian", $id_Bidang_Keahlian, PDO::PARAM_INT);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"keahlian updated"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
 
 function getProgramStudi(){
     $request = \Slim\Slim::getInstance()->request();
@@ -619,12 +822,12 @@ function aftersignupPK(){
             $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
             $stmt->execute();
             
-            $sql2 = "INSERT INTO detail_kerja(user_id_fk,status_kerja,status_pencarian_kerja) values (:user_id,2,2);";
+            $sql2 = "INSERT INTO detail_kerja(user_id_fk,status_kerja,status_pencarian_kerja) values (:user_id,2,2)";
             $stmt2 = $db->prepare($sql2);
             $stmt2->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt2->execute();
 
-            $sql3 = "insert into notification(user_id_fk,countbadgenotif) values (:user_id,0);";
+            $sql3 = "insert into notification(user_id_fk,countbadgenotif) values (:user_id,0)";
             $stmt3 = $db->prepare($sql3);
             $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt3->execute();
@@ -732,14 +935,12 @@ function signuppencarikerja(){
             
             $db = null;
          
-
             if($userData){
                $userData = json_encode($userData);
                 echo '{"userData": ' .$userData . '}';
             } else {
                echo '{"error":{"text":"Enter valid data"}}';
             }
-
            
         }
         else{
@@ -1012,7 +1213,7 @@ function feedPK(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $token=$data->token;
-    $lastCreated = $data->lastCreated;
+    $prodi=$data->prodi;
     $systemToken=apiToken($user_id);
    
     try {
@@ -1020,11 +1221,11 @@ function feedPK(){
         if($systemToken == $token){
             $feedData = '';
             $db = getDB();
-            if($lastCreated){
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY user_id_fk DESC LIMIT 15";
+            if($prodi){
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC LIMIT 15";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
-                $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
             }
             else{
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC LIMIT 15";
