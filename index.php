@@ -44,7 +44,8 @@ $app->post('/getKeahlianUtama','getKeahlianUtama');
 $app->post('/getKeahlianKedua','getKeahlianKedua');
 $app->post('/getKeahlianKetiga','getKeahlianKetiga');
 $app->post('/getKeahlianUtamaAll','getKeahlianUtamaAll');
-
+$app->post('/searchfeedPK','searchfeedPK');
+$app->post('/feedfilterPK','feedfilterPK');
 $app->run();
 
 function getKeahlianUtamaAll(){
@@ -1213,6 +1214,38 @@ function feedPK(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $token=$data->token;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $feedData = '';
+            $db = getDB();
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt->execute();
+            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+            if($feedData)
+            echo '{"feedData": ' . json_encode($feedData) . '}';
+            else
+            echo '{"feedData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function feedfilterPK(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
     $prodi=$data->prodi;
     $systemToken=apiToken($user_id);
    
@@ -1222,25 +1255,57 @@ function feedPK(){
             $feedData = '';
             $db = getDB();
             if($prodi){
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
             }
             else{
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC LIMIT 15";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             }
             $stmt->execute();
             $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
            
             $db = null;
 
-            if($feedData)
+
             echo '{"feedData": ' . json_encode($feedData) . '}';
-            else
-            echo '{"feedData": ""}';
+
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
+function searchfeedPK(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $keyword=$data->keyword;
+    $systemToken=apiToken($user_id);
+   
+    try {
+         
+        if($systemToken == $token){
+            $feedData = '';
+            $db = getDB();
+ 
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi where nama_lengkap like ':keyword' ORDER BY user_id_fk DESC";
+                $stmt->bindParam("keyword", $keyword, PDO::PARAM_STR);
+                $stmt = $db->prepare($sql);
+
+            $stmt->execute();
+            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+
+            echo '{"feedData": ' . json_encode($feedData) . '}';
+
+  
         } else{
             echo '{"error":{"text":"No access"}}';
         }
