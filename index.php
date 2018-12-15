@@ -637,17 +637,18 @@ function editintroPK(){
     $token=$data->token;
     $ttg_saya=$data->ttg_saya;
     $avatar=$data->avatar;
+    $poto_profil=$data->poto_profil;
     $systemToken=apiToken($user_id);
    
     try {
          
         if($systemToken == $token){
             $db = getDB();
-            $sql = "UPDATE profile_pencari_kerja set ttg_saya=:ttg_saya,foto_profil=:foto_profil where user_id_fk=:user_id";
+            $sql = "UPDATE profile_pencari_kerja set ttg_saya=:ttg_saya,foto_profil=:poto_profil where user_id_fk=:user_id";
             $stmt = $db->prepare($sql);
             $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->bindParam("ttg_saya", $ttg_saya, PDO::PARAM_STR);
-            $stmt->bindParam("foto_profil", $avatar, PDO::PARAM_STR);
+            $stmt->bindParam("poto_profil", $poto_profil, PDO::PARAM_STR);
             $stmt->execute();
 
             $sql1 = "SELECT nama_lengkap,ttg_saya from profile_pencari_kerja where user_id_fk=:user_id";
@@ -666,6 +667,8 @@ function editintroPK(){
     } catch(PDOException $e) {
         echo '{"error":{"text":'. $e->getMessage() .'}}';
     }
+
+
 }
 
 
@@ -1221,7 +1224,7 @@ function feedPK(){
         if($systemToken == $token){
             $feedData = '';
             $db = getDB();
-                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,foto_profil from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
