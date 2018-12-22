@@ -369,7 +369,13 @@ function daftarPenawaran(){
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT id_penawaran,id_perusahaan_fk,nama_perusahaan,id_pencarikerja_fk,nama_lengkap from daftar_penawaran inner join profile_pencari_kerja on daftar_penawaran.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on daftar_penawaran.id_perusahaan_fk=profile_perusahaan.userID_fk  and id_perusahaan_fk=:user_id";
+                $sql = "SELECT id_penawaran,id_perusahaan_fk,profile_perusahaan.nama_perusahaan,id_pencarikerja_fk,nama_lengkap,bidang_pekerjaan,bidang_keahlian,foto_profil from daftar_penawaran 
+                inner join profile_pencari_kerja on daftar_penawaran.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk 
+                inner join profile_perusahaan on daftar_penawaran.id_perusahaan_fk=profile_perusahaan.userID_fk 
+                inner join detail_kerja
+                inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan
+                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                and id_perusahaan_fk=:user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -1250,6 +1256,8 @@ function feedfilterPK(){
     $user_id=$data->user_id;
     $token=$data->token;
     $prodi=$data->prodi;
+    $bidang_keahlian=$data->bidang_keahlian;
+    $tahun_lulus=$data->tahun_lulus;
     $systemToken=apiToken($user_id);
    
     try {
@@ -1257,12 +1265,50 @@ function feedfilterPK(){
         if($systemToken == $token){
             $feedData = '';
             $db = getDB();
-            if($prodi){
+            if($prodi&&$bidang_keahlian&&$tahun_lulus){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where prodi=:prodi and tahun_lulus=:tahun_lulus and bidang_keahlian=:bidang_keahlian
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+            }else if($prodi&&$bidang_keahlian){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where prodi=:prodi and bidang_keahlian=:bidang_keahlian
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
+                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+            }else if($prodi&&$tahun_lulus){
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi and tahun_lulus=:tahun_lulus ORDER BY user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+            }else if($prodi){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
-            }
-            else{
+            }elseif($bidang_keahlian){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where bidang_keahlian=:bidang_keahlian
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+            }elseif($tahun_lulus){
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi where tahun_lulus=:tahun_lulus ORDER BY user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+            }else{
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
             }
