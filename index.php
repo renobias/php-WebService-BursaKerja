@@ -46,6 +46,8 @@ $app->post('/getKeahlianKetiga','getKeahlianKetiga');
 $app->post('/getKeahlianUtamaAll','getKeahlianUtamaAll');
 $app->post('/searchfeedPK','searchfeedPK');
 $app->post('/feedfilterPK','feedfilterPK');
+$app->post('/feedPKinfinite','feedPKinfinite');
+
 $app->run();
 
 function getKeahlianUtamaAll(){
@@ -815,6 +817,8 @@ function aftersignupPK(){
     $nama_lengkap=$data->namaLengkap;
     $id_prodi_fk=$data->prodi;
     $tahun_lulus=$data->tahunlulus;
+    $tahun_masuk=$data->tahunmasuk;
+    $jenis_pendaftar=$data->jenis_pendaftar;
     $systemToken=apiToken($user_id);
    
     try {
@@ -824,12 +828,14 @@ function aftersignupPK(){
             
             $profileData = '';
             $db = getDB();
-            $sql = "INSERT INTO profile_pencari_kerja(user_id_fk,nama_lengkap,id_prodi_fk,tahun_lulus) VALUES (:user_id,:nama_lengkap,:id_prodi_fk,:tahun_lulus)";
+            $sql = "INSERT INTO profile_pencari_kerja(user_id_fk,nama_lengkap,id_prodi_fk,tahun_lulus,tahun_masuk,jenis_pendaftar) VALUES (:user_id,:nama_lengkap,:id_prodi_fk,:tahun_lulus,:tahun_masuk,:jenis_pendaftar)";
             $stmt = $db->prepare($sql);
             $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->bindParam("nama_lengkap", $nama_lengkap, PDO::PARAM_STR);
             $stmt->bindParam("id_prodi_fk",$id_prodi_fk,PDO::PARAM_INT);
-            $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+            $stmt->bindParam("tahun_lulus", $tahun_lulus,PDO::PARAM_STR);
+            $stmt->bindParam("tahun_masuk", $tahun_masuk,PDO::PARAM_STR);
+            $stmt->bindParam("jenis_pendaftar", $jenis_pendaftar,PDO::PARAM_INT);
             $stmt->execute();
             
             $sql2 = "INSERT INTO detail_kerja(user_id_fk,status_kerja,status_pencarian_kerja) values (:user_id,2,2)";
@@ -1250,6 +1256,43 @@ function feedPK(){
     }
 }
 
+function feedPKinfinite(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $lastCreated = $data->lastCreated;
+    $systemToken=apiToken($user_id);
+    try {
+         
+        if($systemToken == $token){
+            $feedData = '';
+            $db = getDB();
+            if($lastCreated){
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,foto_profil,created from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi AND created < :lastCreated ORDER BY user_id_fk DESC LIMIT 5";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("lastCreated", $lastCreated, PDO::PARAM_STR);
+            }else{
+                $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,foto_profil,created from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC LIMIT 5";
+                $stmt = $db->prepare($sql);
+            }
+            $stmt->execute();
+            $feedData = $stmt->fetchAll(PDO::FETCH_OBJ);
+           
+            $db = null;
+            if($feedData)
+            echo '{"feedData": ' . json_encode($feedData) . '}';
+            else
+            echo '{"feedData": ""}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
+
 function feedfilterPK(){
     $request = \Slim\Slim::getInstance()->request();
     $data = json_decode($request->getBody());
@@ -1274,7 +1317,7 @@ function feedfilterPK(){
                 order by user_id_fk DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
-                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
                 $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
             }else if($prodi&&$bidang_keahlian){
                 $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
@@ -1290,7 +1333,7 @@ function feedfilterPK(){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi and tahun_lulus=:tahun_lulus ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
-                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
             }else if($prodi){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
@@ -1307,7 +1350,7 @@ function feedfilterPK(){
             }elseif($tahun_lulus){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi where tahun_lulus=:tahun_lulus ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_INT);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
             }else{
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
