@@ -411,7 +411,7 @@ function pesannotifikasiPK(){
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT id_pencarikerja_fk,nama_lengkap,id_perusahaan_fk,nama_perusahaan,created from interest inner join profile_pencari_kerja on interest.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on interest.id_perusahaan_fk=profile_perusahaan.userID_fk and id_pencarikerja_fk=:user_id order by created desc";
+                $sql = "SELECT id_pencarikerja_fk,nama_lengkap,id_perusahaan_fk,nama_perusahaan,interest.created from interest inner join profile_pencari_kerja on interest.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on interest.id_perusahaan_fk=profile_perusahaan.userID_fk and id_pencarikerja_fk=:user_id order by created desc";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -828,7 +828,7 @@ function aftersignupPK(){
             
             $profileData = '';
             $db = getDB();
-            $sql = "INSERT INTO profile_pencari_kerja(user_id_fk,nama_lengkap,id_prodi_fk,tahun_lulus,tahun_masuk,jenis_pendaftar) VALUES (:user_id,:nama_lengkap,:id_prodi_fk,:tahun_lulus,:tahun_masuk,:jenis_pendaftar)";
+            $sql = "INSERT INTO profile_pencari_kerja(user_id_fk,nama_lengkap,id_prodi_fk,tahun_lulus,tahun_masuk,jenis_pendaftar,created) VALUES (:user_id,:nama_lengkap,:id_prodi_fk,:tahun_lulus,:tahun_masuk,:jenis_pendaftar,:user_id)";
             $stmt = $db->prepare($sql);
             $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->bindParam("nama_lengkap", $nama_lengkap, PDO::PARAM_STR);
