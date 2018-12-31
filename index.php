@@ -47,8 +47,36 @@ $app->post('/getKeahlianUtamaAll','getKeahlianUtamaAll');
 $app->post('/searchfeedPK','searchfeedPK');
 $app->post('/feedfilterPK','feedfilterPK');
 $app->post('/feedPKinfinite','feedPKinfinite');
+$app->post('/simpanRiwayat','simpanRiwayat');
 
 $app->run();
+
+function simpanRiwayat(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $judul_skripsi = $data->judul_skripsi;
+    $systemToken=apiToken($user_id);
+   
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "UPDATE profile_pencari_kerja set judul_skripsi =:judul_skripsi where user_id_fk =:user_id";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("judul_skripsi", $judul_skripsi, PDO::PARAM_STR);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"judul skripsi updated"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    }
+}
 
 function getKeahlianUtamaAll(){
     $request = \Slim\Slim::getInstance()->request();
@@ -338,15 +366,15 @@ function berhentiPenawaran(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $token=$data->token;
-    $id_penawaran = $data->id_penawaran;
+    $user_id_fk = $data->user_id_fk;
     $systemToken=apiToken($user_id);
    
     try {
         if($systemToken == $token){
             $db = getDB();
-                $sql = "DELETE from daftar_penawaran where id_penawaran=:id_penawaran";
+                $sql = "UPDATE detail_kerja set nama_perusahaan=null where user_id_fk=:user_id_fk";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("id_penawaran", $id_penawaran, PDO::PARAM_INT);
+                $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
             $stmt->execute();
            
             echo '{"success":{"text":"pencari kerja deleted"}}';
@@ -365,21 +393,20 @@ function daftarPenawaran(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $token=$data->token;
+    $nama_perusahaan=$data->nama_perusahaan;
     $systemToken=apiToken($user_id);
    
     try {
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT id_penawaran,id_perusahaan_fk,profile_perusahaan.nama_perusahaan,id_pencarikerja_fk,nama_lengkap,bidang_pekerjaan,bidang_keahlian,foto_profil from daftar_penawaran 
-                inner join profile_pencari_kerja on daftar_penawaran.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk 
-                inner join profile_perusahaan on daftar_penawaran.id_perusahaan_fk=profile_perusahaan.userID_fk 
-                inner join detail_kerja
-                inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan
-                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
-                and id_perusahaan_fk=:user_id";
+                $sql = "SELECT detail_kerja.user_id_fk,nama_lengkap,nama_perusahaan,bidang_pekerjaan,bidang_keahlian,foto_profil from detail_kerja
+                left join profile_pencari_kerja on detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                left join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan
+                left join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian
+                where nama_perusahaan=:nama_perusahaan";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt->bindParam("nama_perusahaan", $nama_perusahaan, PDO::PARAM_STR);
             $stmt->execute();
 
             $profileUserData = $stmt->fetchAll(PDO::FETCH_OBJ);
@@ -497,6 +524,7 @@ function notifikasi(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $user_id_fk=$data->user_id_fk;
+    $nama_perusahaan=$data->nama_perusahaan;
     $count_badge_notif=$data->count_badge_notif;
     $token=$data->token;
     $systemToken=apiToken($user_id);
@@ -525,9 +553,12 @@ function notifikasi(){
             $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
             $stmt3->execute();
 
-            $sql4 = "UPDATE detail_kerja set status_kerja = 3 where user_id_fk=:user_id_fk";
+            $sql4 = "UPDATE detail_kerja
+            SET status_kerja = 3, nama_perusahaan =:nama_perusahaan
+            WHERE user_id_fk=:user_id_fk";
             $stmt4 = $db->prepare($sql4);
             $stmt4->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt4->bindParam("nama_perusahaan", $nama_perusahaan, PDO::PARAM_STR);
             $stmt4->execute();
 
             $sql1 = "SELECT user_id_fk,countbadgenotif from notification,user where user_id_fk=:user_id_fk and user_id_fk=user_id";
@@ -877,7 +908,9 @@ function login() {
         
         $db = getDB();
         $userData ='';
-        $sql = "SELECT user_id, name, email, username,level FROM user WHERE (username=:username or email=:username) and password=:password ";
+        $sql = "SELECT user_id, name, user.email, username,level,nama_perusahaan FROM user 
+	            left join profile_perusahaan on user.user_id=profile_perusahaan.userID_fk
+	            WHERE (username=:username or user.email=:username) and password=:password";
         $stmt = $db->prepare($sql);
         $stmt->bindParam("username", $data->username, PDO::PARAM_STR);
         $password=hash('sha256',$data->password);
