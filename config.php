@@ -7,7 +7,7 @@ session_start();
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', 'mekarsari');
-define('DB_DATABASE', 'bursakerjaftunj');
+define('DB_DATABASE', 'bursakerjaftunj_prerelease');
 define("BASE_URL", "http://localhost/WebService-BursaKerja-final/api/");
 define("SITE_KEY", 'yourSecretKey');
 

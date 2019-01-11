@@ -34,6 +34,7 @@ $app->post('/emptynotifikasi','emptynotifikasi');
 $app->post('/pesannotifikasiPK','pesannotifikasiPK');
 $app->post('/daftarPenawaran','daftarPenawaran');
 $app->post('/berhentiPenawaran','berhentiPenawaran');
+$app->post('/terimaPenawaran','terimaPenawaran');
 $app->post('/getBidangPekerjaan','getBidangPekerjaan');
 $app->post('/getBidangKeahlian','getBidangKeahlian');
 $app->post('/getProgramStudi','getProgramStudi');
@@ -360,6 +361,32 @@ function getBidangPekerjaan(){
     }
 }
 
+function terimaPenawaran(){
+    $request = \Slim\Slim::getInstance()->request();
+    $data = json_decode($request->getBody());
+    $user_id=$data->user_id;
+    $token=$data->token;
+    $user_id_fk = $data->user_id_fk;
+    $systemToken=apiToken($user_id);
+
+    try {
+        if($systemToken == $token){
+            $db = getDB();
+                $sql = "UPDATE detail_kerja set status_kerja=1,status_pencarian_kerja=1  where user_id_fk=:user_id_fk";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+            $stmt->execute();
+           
+            echo '{"success":{"text":"pencari kerja deleted"}}';
+        } else{
+            echo '{"error":{"text":"No access"}}';
+        }
+       
+    } catch(PDOException $e) {
+        echo '{"error":{"text":'. $e->getMessage() .'}}';
+    } 
+}
+
 /************************* BERHENTI PENAWARAN *************************************/
 function berhentiPenawaran(){
     $request = \Slim\Slim::getInstance()->request();
@@ -372,7 +399,7 @@ function berhentiPenawaran(){
     try {
         if($systemToken == $token){
             $db = getDB();
-                $sql = "UPDATE detail_kerja set nama_perusahaan=null where user_id_fk=:user_id_fk";
+                $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=2,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
             $stmt->execute();
@@ -400,7 +427,7 @@ function daftarPenawaran(){
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT detail_kerja.user_id_fk,nama_lengkap,nama_perusahaan,bidang_pekerjaan,bidang_keahlian,foto_profil from detail_kerja
+                $sql = "SELECT detail_kerja.user_id_fk,nama_lengkap,nama_perusahaan,bidang_pekerjaan,bidang_keahlian,foto_profil,no_telp from detail_kerja
                 left join profile_pencari_kerja on detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
                 left join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan
                 left join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian
@@ -438,7 +465,7 @@ function pesannotifikasiPK(){
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT id_pencarikerja_fk,nama_lengkap,id_perusahaan_fk,nama_perusahaan,interest.created from interest inner join profile_pencari_kerja on interest.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on interest.id_perusahaan_fk=profile_perusahaan.userID_fk and id_pencarikerja_fk=:user_id order by created desc";
+                $sql = "SELECT id_pencarikerja_fk,nama_lengkap,id_perusahaan_fk,nama_perusahaan,logo,interest.created from interest inner join profile_pencari_kerja on interest.id_pencarikerja_fk=profile_pencari_kerja.user_id_fk inner join profile_perusahaan on interest.id_perusahaan_fk=profile_perusahaan.userID_fk and id_pencarikerja_fk=:user_id order by created desc";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -547,11 +574,13 @@ function notifikasi(){
             $stmt2->bindParam("created", $created, PDO::PARAM_INT);
             $stmt2->execute();
 
+            /*
             $sql3 = "insert into daftar_penawaran(id_perusahaan_fk,id_pencarikerja_fk) values(:user_id,:user_id_fk)";
             $stmt3 = $db->prepare($sql3);
             $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
             $stmt3->execute();
+            */
 
             $sql4 = "UPDATE detail_kerja
             SET status_kerja = 3, nama_perusahaan =:nama_perusahaan
@@ -630,9 +659,9 @@ function aftersignupPerusahaan(){
     $systemToken=apiToken($user_id);
     
     try {
-        $email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $emailPerusahaan);
+        //$email_check = preg_match('~^[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.([a-zA-Z]{2,4})$~i', $emailPerusahaan);
             if($systemToken == $token){
-                if (strlen(trim($emailPerusahaan))>0 && $email_check>0){
+                //if (strlen(trim($emailPerusahaan))>0 && $email_check>0){
                 $profileData = '';
                 $db = getDB();
                 $sql = "insert into profile_perusahaan(userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,email) values (:user_id,:namaPerusahaan,:bidangPerusahaan,:alamatPerusahaan,:kodeposPerusahaan,:notelpPerusahaan,:deskripsiPerusahaan,:emailPerusahaan)";
@@ -646,19 +675,16 @@ function aftersignupPerusahaan(){
                 $stmt->bindParam("emailPerusahaan", $emailPerusahaan, PDO::PARAM_STR);
                 $stmt->bindParam("deskripsiPerusahaan", $deskripsiPerusahaan, PDO::PARAM_STR);
                 $stmt->execute();
-
                 $sql1 = "SELECT userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi,profile_perusahaan.email FROM profile_perusahaan,user WHERE userID_fk=:user_id and userID_fk=user_id";
                 $stmt1 = $db->prepare($sql1);
                 $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
                 $stmt1->execute();
                 $profileData = $stmt1->fetch(PDO::FETCH_OBJ);
-
-
                 $db = null;
                 echo '{"profileData": ' . json_encode($profileData) . '}';
-            }else{
-                echo '{"error":{"text":"Enter valid data"}}';
-            }
+            //}else{
+                //echo '{"error":{"text":"Enter valid data"}}';
+            //}
      } else{
         echo '{"error":{"text":"No access"}}';
         }
@@ -1047,14 +1073,12 @@ function signupperusahaan(){
             
             $db = null;
          
-
             if($userData){
                $userData = json_encode($userData);
                 echo '{"userData": ' .$userData . '}';
             } else {
                echo '{"error":{"text":"Enter valid data"}}';
             }
-
            
         }
         else{
@@ -1332,6 +1356,7 @@ function feedfilterPK(){
     $user_id=$data->user_id;
     $token=$data->token;
     $prodi=$data->prodi;
+    $bidang_pekerjaan = $data->bidang_pekerjaan;
     $bidang_keahlian=$data->bidang_keahlian;
     $tahun_lulus=$data->tahun_lulus;
     $systemToken=apiToken($user_id);
@@ -1341,7 +1366,18 @@ function feedfilterPK(){
         if($systemToken == $token){
             $feedData = '';
             $db = getDB();
-            if($prodi&&$bidang_keahlian&&$tahun_lulus){
+            if($prodi&&$bidang_pekerjaan&&$tahun_lulus){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_pekerjaan,bidang_pekerjaan  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+               inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where prodi=:prodi and tahun_lulus=:tahun_lulus and bidang_pekerjaan=:bidang_pekerjaan
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
+                $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
+                $stmt->bindParam("bidang_pekerjaan", $bidang_pekerjaan, PDO::PARAM_STR);
+            }else if($prodi&&$bidang_keahlian&&$tahun_lulus){
                 $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
                 inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
                 inner join detail_kerja 
@@ -1352,6 +1388,16 @@ function feedfilterPK(){
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
                 $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
                 $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+            }else if($prodi&&$bidang_pekerjaan){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_pekerjaan,bidang_pekerjaan  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+                 inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where prodi=:prodi and bidang_pekerjaan=:bidang_pekerjaan
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
+                $stmt->bindParam("bidang_pekerjaan", $bidang_pekerjaan, PDO::PARAM_STR);
             }else if($prodi&&$bidang_keahlian){
                 $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
                 inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
@@ -1367,19 +1413,48 @@ function feedfilterPK(){
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
                 $stmt->bindParam("tahun_lulus", $tahun_lulus, PDO::PARAM_STR);
+            }else if($bidang_pekerjaan&&$bidang_keahlian){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_pekerjaan,bidang_pekerjaan,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+                inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where bidang_pekerjaan=:bidang_pekerjaan && bidang_keahlian =:bidang_keahlian;
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("bidang_pekerjaan", $bidang_pekerjaan, PDO::PARAM_STR);
+                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+            }else if($bidang_pekerjaan&&$tahun_lulus){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_pekerjaan,bidang_pekerjaan  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+               inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where tahun_lulus=:tahun_lulus and bidang_pekerjaan=:bidang_pekerjaan
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("bidang_pekerjaan", $bidang_pekerjaan, PDO::PARAM_STR);
+            }else if($bidang_keahlian&&$tahun_lulus){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+                inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
+                inner join detail_kerja 
+               inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where tahun_lulus=:tahun_lulus and bidang_keahlian=:bidang_keahlian
+                order by user_id_fk DESC";
+                $stmt = $db->prepare($sql);
+                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
             }else if($prodi){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi and prodi=:prodi ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("prodi", $prodi, PDO::PARAM_STR);
-            }elseif($bidang_keahlian){
-                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_keahlian,bidang_keahlian  from profile_pencari_kerja
+            }else if($bidang_pekerjaan){
+                $sql = "SELECT profile_pencari_kerja.user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya,id_bidang_pekerjaan,bidang_pekerjaan  from profile_pencari_kerja
                 inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi
                 inner join detail_kerja 
-                inner join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
-                where bidang_keahlian=:bidang_keahlian
-                order by user_id_fk DESC";
+                inner join bidang_pekerjaan on detail_kerja.id_bidang_pekerjaan_fk_1=bidang_pekerjaan.id_bidang_pekerjaan and detail_kerja.user_id_fk=profile_pencari_kerja.user_id_fk
+                where bidang_pekerjaan=:bidang_pekerjaan
+                order by user_id_fk DESC;";
                 $stmt = $db->prepare($sql);
-                $stmt->bindParam("bidang_keahlian", $bidang_keahlian, PDO::PARAM_STR);
+                $stmt->bindParam("bidang_pekerjaan", $bidang_pekerjaan, PDO::PARAM_STR);
             }elseif($tahun_lulus){
                 $sql = "SELECT user_id_fk,nama_lengkap,prodi,tahun_lulus,ttg_saya from profile_pencari_kerja inner join program_studi on profile_pencari_kerja.id_prodi_fk=program_studi.id_prodi where tahun_lulus=:tahun_lulus ORDER BY user_id_fk DESC";
                 $stmt = $db->prepare($sql);
@@ -1579,12 +1654,10 @@ function profilePerusahaan(){
     $request = \Slim\Slim::getInstance()->request();
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
-    $token=$data->token;
-    $systemToken=apiToken($user_id);
    
     try {
          
-        if($systemToken == $token){
+
             $feedData = '';
             $db = getDB();
                 $sql = "SELECT * from profile_perusahaan inner join user on profile_perusahaan.userID_fk=user.user_id and profile_perusahaan.userID_fk=:user_id";
@@ -1599,9 +1672,7 @@ function profilePerusahaan(){
             echo '{"feedData": ' . json_encode($feedData) . '}';
             else
             echo '{"feedData": ""}';
-        } else{
-            echo '{"error":{"text":"No access"}}';
-        }
+
        
     } catch(PDOException $e) {
         echo '{"error":{"text":'. $e->getMessage() .'}}';
