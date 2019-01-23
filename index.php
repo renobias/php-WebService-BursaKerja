@@ -91,6 +91,8 @@ function terimaPenawaranSDM(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $id_interest=$data->id_interest;
+    $user_id_perusahaan=$data->user_id_perusahaan;
+    $count_badge_notif=$data->count_badge_notif;
     $token=$data->token;
     $systemToken=apiToken($user_id);
    
@@ -102,6 +104,12 @@ function terimaPenawaranSDM(){
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("id_interest", $id_interest, PDO::PARAM_INT);
             $stmt->execute();
+
+            $sql2 = "UPDATE notification set countbadgenotif=:count_badge_notif where user_id_fk=:user_id_perusahaan";
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->bindParam("count_badge_notif", $count_badge_notif, PDO::PARAM_INT);
+            $stmt2->bindParam("user_id_perusahaan", $user_id_perusahaan, PDO::PARAM_INT);
+        $stmt2->execute();
 
             $sql1 = "SELECT * from interest where id_interest=:id_interest";
             $stmt1 = $db->prepare($sql1);
@@ -130,6 +138,8 @@ function tolakPenawaranSDM(){
     $data = json_decode($request->getBody());
     $user_id=$data->user_id;
     $id_interest=$data->id_interest;
+    $user_id_perusahaan=$data->user_id_perusahaan;
+    $count_badge_notif=$data->count_badge_notif;
     $token=$data->token;
     $systemToken=apiToken($user_id);
    
@@ -141,6 +151,47 @@ function tolakPenawaranSDM(){
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("id_interest", $id_interest, PDO::PARAM_INT);
             $stmt->execute();
+
+            $sql2 = "UPDATE notification set countbadgenotif=:count_badge_notif where user_id_fk=:user_id_perusahaan";
+            $stmt2 = $db->prepare($sql2);
+            $stmt2->bindParam("count_badge_notif", $count_badge_notif, PDO::PARAM_INT);
+            $stmt2->bindParam("user_id_perusahaan", $user_id_perusahaan, PDO::PARAM_INT);
+            $stmt2->execute();
+
+            //mendapatkan id daftar sdm untuk menghapusnya
+            $sql4 = "SELECT id_daftarsdm from daftar_sdm_perusahaan where ID_perusahaan_fk=:user_id_perusahaan and ID_pencarikerja_fk=:user_id";
+            $stmt4 = $db->prepare($sql4);
+            $stmt4->bindParam("user_id_perusahaan", $user_id_perusahaan, PDO::PARAM_INT);
+            $stmt4->bindParam("user_id", $user_id, PDO::PARAM_INT);
+            $stmt4->execute();
+            $iddaftarsdm;
+            while($cekidsdm = $stmt4->fetch(PDO::FETCH_ASSOC)){
+                $iddaftarsdm=$cekidsdm['id_daftarsdm'];
+            $sql5 = "DELETE from daftar_sdm_perusahaan where id_daftarsdm=:iddaftarsdm";
+            $stmt5 = $db->prepare($sql5);
+            $stmt5->bindParam("iddaftarsdm", $iddaftarsdm, PDO::PARAM_INT);
+            $stmt5->execute();
+            }
+            
+        //cek masih ditawar dengan perusahaan lain ga
+        $sql3 = "SELECT COUNT(ID_pencarikerja_fk) AS cekPenawaran from daftar_sdm_perusahaan where ID_pencarikerja_fk=:user_id_fk";
+        $stmt3 = $db->prepare($sql3);
+        $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+        $stmt3->execute();
+ 
+        while($cekPenawaran = $stmt3->fetch(PDO::FETCH_ASSOC)){ 
+            if($cekPenawaran['cekPenawaran']>0){
+                $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=3,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+                $stmt->execute();
+            }elseif($cekPenawaran['cekPenawaran']=0){
+                 $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=2,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+       } 
 
             $sql1 = "SELECT * from interest where id_interest=:id_interest";
             $stmt1 = $db->prepare($sql1);
@@ -478,17 +529,19 @@ function terimaPenawaran(){
     $token=$data->token;
     $user_id_fk = $data->user_id_fk;
     $ID_daftarsdm=$data->ID_daftarsdm;
+    $nama_perusahaan=$data->nama_perusahaan;
     $systemToken=apiToken($user_id);
 
     try {
         if($systemToken == $token){
             $db = getDB();
-                $sql = "UPDATE detail_kerja set status_kerja=1,status_pencarian_kerja=1  where user_id_fk=:user_id_fk";
+                $sql = "UPDATE detail_kerja set status_kerja=1,status_pencarian_kerja=1,nama_perusahaan=:nama_perusahaan  where user_id_fk=:user_id_fk";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+                $stmt->bindParam("nama_perusahaan", $nama_perusahaan, PDO::PARAM_STR);
             $stmt->execute();
 
-            $sql2 = "UPDATE daftar_Sdm_perusahaan set status_kerja_sdm=1 where id_daftarsdm=:ID_daftarsdm";
+            $sql2 = "UPDATE daftar_sdm_perusahaan set status_kerja_sdm=1 where id_daftarsdm=:ID_daftarsdm";
             $stmt2 = $db->prepare($sql2);
             $stmt2->bindParam("ID_daftarsdm", $ID_daftarsdm, PDO::PARAM_INT);
         $stmt2->execute();
@@ -512,19 +565,40 @@ function berhentiPenawaran(){
     $user_id_fk = $data->user_id_fk;
     $ID_daftarsdm=$data->ID_daftarsdm;
     $systemToken=apiToken($user_id);
-   
     try {
         if($systemToken == $token){
+            $cekPenawaran;
             $db = getDB();
-                $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=2,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
-                $stmt = $db->prepare($sql);
-                $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
-            $stmt->execute();
+            $sql1 = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=2,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
+            $stmt1 = $db->prepare($sql1);
+            $stmt1->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+        $stmt1->execute();
 
-            $sql2 = "DELETE from daftar_Sdm_perusahaan where id_daftarsdm=:ID_daftarsdm";
-            $stmt2 = $db->prepare($sql2);
-            $stmt2->bindParam("ID_daftarsdm", $ID_daftarsdm, PDO::PARAM_INT);
+        $sql2 = "DELETE from daftar_sdm_perusahaan where id_daftarsdm=:ID_daftarsdm";
+        $stmt2 = $db->prepare($sql2);
+        $stmt2->bindParam("ID_daftarsdm", $ID_daftarsdm, PDO::PARAM_INT);
         $stmt2->execute();
+
+            //cek masih ditawar dengan perusahaan lain ga
+        $db = getDB();
+        $sql3 = "SELECT COUNT(ID_pencarikerja_fk) AS cekPenawaran from daftar_sdm_perusahaan where ID_pencarikerja_fk=:user_id_fk";
+        $stmt3 = $db->prepare($sql3);
+        $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+        $stmt3->execute();
+ 
+        while($cekPenawaran = $stmt3->fetch(PDO::FETCH_ASSOC)){ 
+            if($cekPenawaran['cekPenawaran']>0){
+                $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=3,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+                $stmt->execute();
+            }elseif($cekPenawaran['cekPenawaran']=0){
+                 $sql = "UPDATE detail_kerja set nama_perusahaan=null,status_kerja=2,status_pencarian_kerja=2  where user_id_fk=:user_id_fk";
+                    $stmt = $db->prepare($sql);
+                    $stmt->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
+                $stmt->execute();
+            }
+       }
            
             echo '{"success":{"text":"pencari kerja deleted"}}';
         } else{
@@ -555,8 +629,8 @@ function daftarPenawaran(){
                 left join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian
                 where nama_perusahaan=:nama_perusahaan";
                 */
-                $sql="SELECT id_daftarsdm,ID_perusahaan_fk,daftar_Sdm_perusahaan.nama_perusahaan,ID_pencarikerja_fk,nama_pencarikerja,foto_profil,status_kerja_sdm from daftar_Sdm_perusahaan
-                left join profile_pencari_kerja on daftar_Sdm_perusahaan.ID_pencarikerja_fk=profile_pencari_kerja.user_id_fk  
+                $sql="SELECT id_daftarsdm,ID_perusahaan_fk,daftar_sdm_perusahaan.nama_perusahaan,ID_pencarikerja_fk,nama_pencarikerja,foto_profil,status_kerja_sdm from daftar_sdm_perusahaan
+                left join profile_pencari_kerja on daftar_sdm_perusahaan.ID_pencarikerja_fk=profile_pencari_kerja.user_id_fk  
                 where ID_perusahaan_fk=:user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_STR);
@@ -597,8 +671,8 @@ function cekDaftarPenawaran(){
                 left join bidang_keahlian on detail_kerja.id_bidang_keahlian_fk_1=bidang_keahlian.id_bidang_keahlian
                 where nama_perusahaan=:nama_perusahaan";
                 */
-                $sql="SELECT id_daftarsdm,ID_perusahaan_fk,daftar_Sdm_perusahaan.nama_perusahaan,ID_pencarikerja_fk,nama_pencarikerja,foto_profil,status_kerja_sdm from daftar_Sdm_perusahaan
-                left join profile_pencari_kerja on daftar_Sdm_perusahaan.ID_pencarikerja_fk=profile_pencari_kerja.user_id_fk  
+                $sql="SELECT id_daftarsdm,ID_perusahaan_fk,daftar_sdm_perusahaan.nama_perusahaan,ID_pencarikerja_fk,nama_pencarikerja,foto_profil,status_kerja_sdm from daftar_Sdm_perusahaan
+                left join profile_pencari_kerja on daftar_sdm_perusahaan.ID_pencarikerja_fk=profile_pencari_kerja.user_id_fk  
                 where ID_perusahaan_fk=:user_id and ID_pencarikerja_fk=:user_id_fk";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_STR);
@@ -664,7 +738,7 @@ function ambilnilainotifikasi(){
     try {
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT countbadgenotif from notification,user where user_id_fk=:user_id and user_id_fk=user_id ";
+                $sql = "SELECT countbadgenotif from notification where user_id_fk=:user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -692,7 +766,7 @@ function tampilnotifikasi(){
         if($systemToken == $token){
             $profileUserData = '';
             $db = getDB();
-                $sql = "SELECT countbadgenotif from notification,user where user_id_fk=:user_id and user_id_fk=user_id ";
+                $sql = "SELECT countbadgenotif from notification where user_id_fk=:user_id";
                 $stmt = $db->prepare($sql);
                 $stmt->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt->execute();
@@ -744,7 +818,7 @@ function notifikasi(){
             $stmt2->bindParam("created", $created, PDO::PARAM_INT);
             $stmt2->execute();
             
-            $sql3 = "insert into daftar_Sdm_perusahaan(ID_perusahaan_fk,ID_pencarikerja_fk,nama_perusahaan,nama_pencarikerja,status_kerja_sdm) values(:user_id,:user_id_fk,:nama_perusahaan,:nama_pencarikerja,3)";
+            $sql3 = "insert into daftar_sdm_perusahaan(ID_perusahaan_fk,ID_pencarikerja_fk,nama_perusahaan,nama_pencarikerja,status_kerja_sdm) values(:user_id,:user_id_fk,:nama_perusahaan,:nama_pencarikerja,3)";
             $stmt3 = $db->prepare($sql3);
             $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
             $stmt3->bindParam("user_id_fk", $user_id_fk, PDO::PARAM_INT);
@@ -847,6 +921,12 @@ function aftersignupPerusahaan(){
                 $stmt->bindParam("deskripsiPerusahaan", $deskripsiPerusahaan, PDO::PARAM_STR);
                 $stmt->bindParam("tgl_update", $tgl_update,PDO::PARAM_STR);
                 $stmt->execute();
+
+                $sql3 = "insert into notification(user_id_fk,countbadgenotif) values (:user_id,0)";
+                $stmt3 = $db->prepare($sql3);
+                $stmt3->bindParam("user_id", $user_id, PDO::PARAM_INT);
+                $stmt3->execute();
+
                 $sql1 = "SELECT userID_fk,nama_perusahaan,bidang_perusahaan,alamat,kodepos,no_telepon,deskripsi FROM profile_perusahaan,user WHERE userID_fk=:user_id and userID_fk=user_id";
                 $stmt1 = $db->prepare($sql1);
                 $stmt1->bindParam("user_id", $user_id, PDO::PARAM_INT);
